@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Grid: Idle Protocol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+      body {
+        background-color: #020617;
+        font-family: 'Share Tech Mono', monospace;
+        overflow-x: hidden;
+      }
+      
+      /* Custom Scrollbar for Cyberpunk feel */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f172a; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #0ea5e9; 
+        border-radius: 0px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #0284c7; 
+      }
+
+      .scanline {
+        background: linear-gradient(
+          to bottom,
+          rgba(255,255,255,0),
+          rgba(255,255,255,0) 50%,
+          rgba(0,0,0,0.2) 50%,
+          rgba(0,0,0,0.2)
+        );
+        background-size: 100% 4px;
+        position: fixed;
+        pointer-events: none;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 50;
+        opacity: 0.15;
+      }
+
+      .cyber-grid {
+        background-image: 
+          linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px);
+        background-size: 40px 40px;
+        transform: perspective(500px) rotateX(60deg);
+        position: fixed;
+        top: 50%;
+        left: -50%;
+        right: -50%;
+        bottom: -50%;
+        z-index: -1;
+        animation: moveGrid 20s linear infinite;
+      }
+
+      @keyframes moveGrid {
+        0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+        100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
+      }
+
+      /* --- City View Isometric Styles --- */
+      .city-viewport {
+        perspective: 1200px;
+        overflow: hidden;
+        /* Radial gradient for focus */
+        background: radial-gradient(circle at center, rgba(6,182,212,0.05) 0%, rgba(2,6,23,0) 70%);
+      }
+      
+      .iso-grid {
+        transform-style: preserve-3d;
+        transform: rotateX(60deg) rotateZ(45deg);
+        width: 360px;
+        height: 360px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-left: -180px;
+        margin-top: -180px;
+        /* Grid floor */
+        background-image: 
+          linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 60px 60px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+      }
+
+      .iso-building-container {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        transform-style: preserve-3d;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Stacking plates effect for wireframe buildings */
+      .iso-plate {
+        position: absolute;
+        inset: 0;
+        border: 1px solid currentColor;
+        background: rgba(0,0,0,0.4);
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        transition: transform 0.5s;
+      }
+      
+      .iso-plate:hover {
+        background: rgba(255,255,255,0.1);
+      }
+
+      .connection-line {
+        position: absolute;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, currentColor, transparent);
+        opacity: 0.3;
+        transform-origin: 0 50%;
+        pointer-events: none;
+      }
+
+      .resource-packet {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+        top: -2px;
+        z-index: 10;
+        animation: flowPacket 2s linear infinite;
+      }
+
+      @keyframes flowPacket {
+        0% { left: 0; opacity: 0; transform: scale(0.5); }
+        10% { opacity: 1; transform: scale(1); }
+        90% { opacity: 1; transform: scale(1); }
+        100% { left: 100%; opacity: 0; transform: scale(0.5); }
+      }
+      
+      .glitch-text {
+        position: relative;
+      }
+      .glitch-text::before,
+      .glitch-text::after {
+        content: attr(title);
+        position: absolute;
+        left: 0;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+</head>
+  <body class="text-slate-200">
+    <div id="root"></div>
+    <div class="scanline"></div>
+  </body>
+</html>
