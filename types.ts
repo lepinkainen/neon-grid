@@ -31,6 +31,7 @@ export interface BuildingDef {
 
 export interface SavedBuildingState {
   level: number;
+  active?: boolean; // Added to track if building is toggled on/off
 }
 
 export interface GameState {

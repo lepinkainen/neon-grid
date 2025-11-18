@@ -12,8 +12,8 @@ export const INITIAL_RESOURCES: Record<ResourceType, number> = {
 
 // Initial helper to get resources started
 export const MANUAL_CLICK_REWARD: Record<ResourceType, number> = {
-  [ResourceType.ENERGY]: 10,
-  [ResourceType.DATA]: 1,
+  [ResourceType.ENERGY]: 15,
+  [ResourceType.DATA]: 5, // Buffed from 1 to 5 to help recovery
   [ResourceType.MATS]: 0,
   [ResourceType.CREDITS]: 0,
 };
@@ -34,7 +34,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingId, BuildingDef> = {
     name: "Bit Scraper",
     description: "Scrapes the net for raw Data. Consumes Energy.",
     baseCost: [{ resource: ResourceType.ENERGY, amount: 50 }, { resource: ResourceType.DATA, amount: 25 }],
-    baseProduction: { [ResourceType.DATA]: 3 },
+    baseProduction: { [ResourceType.DATA]: 4 }, // Buffed from 3
     baseConsumption: { [ResourceType.ENERGY]: 2 },
     costMultiplier: 1.4,
     flavorText: "Packet interception active."
@@ -55,7 +55,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingId, BuildingDef> = {
     description: "Processes Data and Materials into tradeable Credits.",
     baseCost: [{ resource: ResourceType.MATS, amount: 50 }, { resource: ResourceType.DATA, amount: 500 }],
     baseProduction: { [ResourceType.CREDITS]: 1 },
-    baseConsumption: { [ResourceType.DATA]: 20, [ResourceType.MATS]: 0.5 },
+    baseConsumption: { [ResourceType.DATA]: 15, [ResourceType.MATS]: 0.5 }, // Nerfed consumption from 20 to 15
     costMultiplier: 1.8,
     flavorText: "Ledger updated."
   },

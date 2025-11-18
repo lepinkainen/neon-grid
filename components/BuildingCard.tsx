@@ -6,12 +6,14 @@ interface BuildingCardProps {
   id: BuildingId;
   data: SavedBuildingState;
   onUpgrade: (id: BuildingId) => void;
+  onToggle: (id: BuildingId) => void;
   canAfford: boolean;
 }
 
-const BuildingCard: React.FC<BuildingCardProps> = ({ id, data, onUpgrade, canAfford }) => {
+const BuildingCard: React.FC<BuildingCardProps> = ({ id, data, onUpgrade, onToggle, canAfford }) => {
   const def = BUILDING_DEFINITIONS[id];
   const isUnlocked = data.level > 0;
+  const isActive = data.active !== false; // Default true if undefined
   
   const getCost = (base: number) => Math.floor(base * Math.pow(def.costMultiplier, data.level));
 
@@ -22,23 +24,36 @@ const BuildingCard: React.FC<BuildingCardProps> = ({ id, data, onUpgrade, canAff
         h-full flex flex-col justify-between
         p-4 transition-all duration-300
         ${isUnlocked 
-          ? 'bg-slate-950/90 border-2 border-slate-700 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:-translate-y-1' 
+          ? (isActive 
+              ? 'bg-slate-950/90 border-2 border-slate-700 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:-translate-y-1' 
+              : 'bg-slate-950/90 border-2 border-red-900/50 grayscale hover:grayscale-0 hover:border-red-500')
           : 'bg-slate-950/50 border border-dashed border-slate-800 opacity-80 hover:opacity-100 hover:border-slate-600'}
       `}>
         
         {/* Header */}
         <div className="flex justify-between items-start mb-2 border-b border-slate-800 pb-2">
           <div>
-            <h3 className={`${isUnlocked ? 'text-cyan-400' : 'text-slate-500'} font-bold text-lg tracking-wider uppercase`}>
+            <h3 className={`${isUnlocked ? (isActive ? 'text-cyan-400' : 'text-red-900') : 'text-slate-500'} font-bold text-lg tracking-wider uppercase`}>
               {def.name}
             </h3>
-            <div className="text-slate-500 text-xs">
-              STATUS: <span className={isUnlocked ? "text-green-400" : "text-yellow-600"}>
-                {isUnlocked ? `LVL ${data.level}` : "BLUEPRINT READY"}
+            <div className="text-slate-500 text-xs flex items-center gap-2">
+              STATUS: <span className={isUnlocked ? (isActive ? "text-green-400" : "text-red-500 animate-pulse") : "text-yellow-600"}>
+                {isUnlocked ? (isActive ? `ACTIVE [LVL ${data.level}]` : "OFFLINE") : "BLUEPRINT READY"}
               </span>
             </div>
           </div>
-          <div className="text-[10px] text-slate-600 border border-slate-800 px-1">ID: {id.split('_')[0]}</div>
+          
+          <div className="flex flex-col items-end gap-1">
+             <div className="text-[10px] text-slate-600 border border-slate-800 px-1">ID: {id.split('_')[0]}</div>
+             {isUnlocked && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onToggle(id); }}
+                  className={`text-[10px] px-2 py-0.5 border font-bold uppercase tracking-wider transition-colors ${isActive ? 'border-green-500 text-green-400 hover:bg-green-500 hover:text-black' : 'border-red-500 text-red-400 hover:bg-red-500 hover:text-black'}`}
+                >
+                  {isActive ? 'PWR: ON' : 'PWR: OFF'}
+                </button>
+             )}
+          </div>
         </div>
 
         {/* Description & Production */}
@@ -47,7 +62,7 @@ const BuildingCard: React.FC<BuildingCardProps> = ({ id, data, onUpgrade, canAff
             {def.description}
           </p>
           
-          <div className={`space-y-1 ${!isUnlocked ? 'opacity-70 grayscale' : ''}`}>
+          <div className={`space-y-1 ${(!isUnlocked || !isActive) ? 'opacity-50' : ''}`}>
              {Object.entries(def.baseProduction).map(([res, amt]) => (
                <div key={res} className="flex justify-between text-xs">
                  <span className="text-green-500/80">OUTPUT ({res})</span>
@@ -89,7 +104,7 @@ const BuildingCard: React.FC<BuildingCardProps> = ({ id, data, onUpgrade, canAff
         </button>
         
         {/* Decorative Corner Flairs */}
-        {isUnlocked && (
+        {isUnlocked && isActive && (
           <>
             <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-500/50 -mt-0.5 -ml-0.5"></div>
             <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan-500/50 -mt-0.5 -mr-0.5"></div>

@@ -26,14 +26,15 @@ const CityView: React.FC<CityViewProps> = ({ buildings, visibleBuildingIds }) =>
 
     const config = BUILDING_CONFIG[id];
     const level = buildings[id].level;
-    const isActive = level > 0;
+    const isActive = level > 0 && buildings[id].active !== false; // Must be level > 0 AND active
+    const isBuilt = level > 0;
     
     // Determine visual height (number of plates) based on level
     // Cap at 5 plates for visuals
-    const plateCount = isActive ? Math.min(5, Math.ceil(level / 2) + 1) : 1;
+    const plateCount = isBuilt ? Math.min(5, Math.ceil(level / 2) + 1) : 1;
     
     // Outline style for inactive buildings
-    const opacityClass = isActive ? 'opacity-100' : 'opacity-20';
+    const opacityClass = isActive ? 'opacity-100' : 'opacity-30 grayscale';
     
     return (
       <div 
@@ -50,7 +51,7 @@ const CityView: React.FC<CityViewProps> = ({ buildings, visibleBuildingIds }) =>
         <div className="iso-plate" style={{ transform: 'translateZ(0px)' }}></div>
         
         {/* Stacked Plates for 3D effect */}
-        {isActive && Array.from({ length: plateCount }).map((_, idx) => (
+        {isBuilt && Array.from({ length: plateCount }).map((_, idx) => (
           <div 
             key={idx} 
             className="iso-plate" 
@@ -65,16 +66,16 @@ const CityView: React.FC<CityViewProps> = ({ buildings, visibleBuildingIds }) =>
         ))}
         
         {/* Label (Floating above) */}
-        {isActive && (
+        {isBuilt && (
           <div 
-            className="absolute text-[8px] bg-black/60 px-1 border border-current whitespace-nowrap"
+            className={`absolute text-[8px] px-1 border border-current whitespace-nowrap ${isActive ? 'bg-black/60' : 'bg-red-900/60 text-red-200 border-red-500'}`}
             style={{ 
               transform: `translateZ(${plateCount * 15 + 20}px) rotateZ(-45deg) rotateX(-60deg)`, 
               left: '50%', 
               top: '50%' 
             }}
           >
-            LVL {level}
+            {isActive ? `LVL ${level}` : 'OFFLINE'}
           </div>
         )}
       </div>
@@ -89,10 +90,7 @@ const CityView: React.FC<CityViewProps> = ({ buildings, visibleBuildingIds }) =>
     const config = BUILDING_CONFIG[id];
     const center = BUILDING_CONFIG[BuildingId.MAINFRAME];
     const level = buildings[id].level;
-    
-    // We show the line even if level is 0 (ghost connection), but maybe faint?
-    // Logic: if level > 0, full line + packet.
-    // if level == 0, maybe just faint line, no packet.
+    const isActive = level > 0 && buildings[id].active !== false;
     
     const x1 = parseFloat(config.left);
     const y1 = parseFloat(config.top);
@@ -114,11 +112,11 @@ const CityView: React.FC<CityViewProps> = ({ buildings, visibleBuildingIds }) =>
           width: `${dist}%`,
           transform: `rotate(${angle}deg)`,
           zIndex: -1,
-          opacity: level > 0 ? 0.5 : 0.1
+          opacity: level > 0 ? (isActive ? 0.5 : 0.1) : 0.1
         }}
       >
         {/* The moving packet only if active */}
-        {level > 0 && (
+        {isActive && (
           <div className="resource-packet" style={{ animationDuration: `${Math.max(0.5, 3 - level * 0.1)}s` }} />
         )}
       </div>
@@ -143,10 +141,10 @@ const CityView: React.FC<CityViewProps> = ({ buildings, visibleBuildingIds }) =>
         {/* Render Buildings */}
         {Object.values(BuildingId).map(id => renderBuilding(id))}
         
-        {/* Center pulsing aura for Mainframe, only if visible */}
+        {/* Center pulsing aura for Mainframe, only if visible and active */}
         {visibleBuildingIds.includes(BuildingId.MAINFRAME) && (
           <div 
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border border-green-500/20 bg-green-500/5"
+            className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border transition-colors duration-500 ${buildings[BuildingId.MAINFRAME].active !== false ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/10 bg-transparent'}`}
             style={{ transform: 'translateZ(1px)' }}
           ></div>
         )}

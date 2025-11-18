@@ -7,11 +7,11 @@ const LOCAL_STORAGE_KEY = 'neon_grid_save_v1';
 export const useGameEngine = () => {
   const [resources, setResources] = useState<Record<ResourceType, number>>(INITIAL_RESOURCES);
   const [buildings, setBuildings] = useState<Record<BuildingId, SavedBuildingState>>({
-    [BuildingId.SOLAR_FARM]: { level: 0 },
-    [BuildingId.DATA_MINER]: { level: 0 },
-    [BuildingId.SYNTH_FACTORY]: { level: 0 },
-    [BuildingId.MAINFRAME]: { level: 0 },
-    [BuildingId.QUANTUM_RIG]: { level: 0 },
+    [BuildingId.SOLAR_FARM]: { level: 0, active: true },
+    [BuildingId.DATA_MINER]: { level: 0, active: true },
+    [BuildingId.SYNTH_FACTORY]: { level: 0, active: true },
+    [BuildingId.MAINFRAME]: { level: 0, active: true },
+    [BuildingId.QUANTUM_RIG]: { level: 0, active: true },
   });
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [offlineGains, setOfflineGains] = useState<Record<ResourceType, number> | null>(null);
@@ -50,14 +50,15 @@ export const useGameEngine = () => {
 
     Object.values(BuildingId).forEach((id) => {
       const bId = id as BuildingId;
-      const level = currentBuildings[bId].level;
-      if (level > 0) {
+      const state = currentBuildings[bId];
+      const level = state.level;
+      const isActive = state.active !== false; // Default to true if undefined
+
+      if (level > 0 && isActive) {
         const def = BUILDING_DEFINITIONS[bId];
         
         // Add production
         Object.entries(def.baseProduction).forEach(([res, amount]) => {
-            // Exponential growth curve for higher levels to make it interesting
-            // Or simple linear: level * amount. Let's go linear for simplicity.
             production[res as ResourceType] += (amount || 0) * level;
         });
 
@@ -88,27 +89,27 @@ export const useGameEngine = () => {
     if (saved) {
       try {
         const parsed: GameState = JSON.parse(saved);
-        setBuildings(parsed.buildings);
+        // Ensure active state exists for migrated saves
+        const sanitizedBuildings = { ...parsed.buildings };
+        Object.keys(sanitizedBuildings).forEach(k => {
+            const key = k as BuildingId;
+            if (sanitizedBuildings[key].active === undefined) {
+                sanitizedBuildings[key].active = true;
+            }
+        });
+
+        setBuildings(sanitizedBuildings);
         
         // Calculate Offline Progress
         const now = Date.now();
         const secondsOffline = (now - parsed.lastSaveTime) / 1000;
         
         if (secondsOffline > 5) {
-          const { production, consumption } = calculateProduction(parsed.buildings);
+          const { production, consumption } = calculateProduction(sanitizedBuildings);
           const gained: Record<string, number> = {};
-
-          // Simple logic: If we have net negative, we don't produce. 
-          // A more complex system would drain buffers. Here we check pure rates.
-          
-          // First check if we can afford consumption
-          // For this MVP, we assume if you are offline, you have average throughput.
-          // We will calculate Net Rate per second.
           
           Object.values(ResourceType).forEach(type => {
              const net = (production[type] || 0) - (consumption[type] || 0);
-             // We only grant offline progress if the net is positive. 
-             // If negative, we assume the building stopped working.
              if (net > 0) {
                 const amount = net * secondsOffline;
                 gained[type] = amount;
@@ -140,11 +141,6 @@ export const useGameEngine = () => {
         const { production, consumption } = calculateProduction(buildingsRef.current);
         const next = { ...prev };
         
-        // We need to check if we have enough resources for consumption
-        // If not, production for that dependent building should fail.
-        // To keep it simple for this demo: We calculate global net. 
-        // If net is negative, we subtract until 0.
-        
         Object.values(ResourceType).forEach(type => {
             const prod = production[type] || 0;
             const cons = consumption[type] || 0;
@@ -169,10 +165,7 @@ export const useGameEngine = () => {
     const b = buildings[id];
     const def = BUILDING_DEFINITIONS[id];
     
-    // Calculate Cost: Base * (Multiplier ^ Level)
     const getCost = (base: number) => Math.floor(base * Math.pow(def.costMultiplier, b.level));
-    
-    // Check affordability
     const canAfford = def.baseCost.every(c => resources[c.resource] >= getCost(c.amount));
 
     if (!canAfford) {
@@ -180,7 +173,6 @@ export const useGameEngine = () => {
       return;
     }
 
-    // Deduct Resources
     setResources(prev => {
       const next = { ...prev };
       def.baseCost.forEach(c => {
@@ -189,13 +181,24 @@ export const useGameEngine = () => {
       return next;
     });
 
-    // Level Up
     setBuildings(prev => ({
       ...prev,
-      [id]: { level: prev[id].level + 1 }
+      [id]: { ...prev[id], level: prev[id].level + 1 }
     }));
     
     addLog(`UPGRADE: ${def.name} upgraded to Level ${b.level + 1}`, 'info');
+  };
+
+  const toggleBuilding = (id: BuildingId) => {
+    setBuildings(prev => {
+        const currentState = prev[id].active !== false; // Default true
+        const newState = !currentState;
+        return {
+            ...prev,
+            [id]: { ...prev[id], active: newState }
+        };
+    });
+    addLog(`SYSTEM: ${BUILDING_DEFINITIONS[id].name} ${buildings[id].active !== false ? 'SUSPENDED' : 'ACTIVATED'}`, 'system');
   };
 
   const manualGather = () => {
@@ -219,9 +222,10 @@ export const useGameEngine = () => {
     logs,
     offlineGains,
     upgradeBuilding,
+    toggleBuilding,
     manualGather,
     resetGame,
     addLog,
-    setOfflineGains // To clear modal
+    setOfflineGains
   };
 };

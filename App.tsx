@@ -15,7 +15,8 @@ function App() {
     buildings, 
     logs, 
     offlineGains, 
-    upgradeBuilding, 
+    upgradeBuilding,
+    toggleBuilding, 
     manualGather, 
     resetGame, 
     addLog,
@@ -36,7 +37,8 @@ function App() {
     Object.values(BuildingId).forEach(id => {
       const b = buildings[id as BuildingId];
       const def = BUILDING_DEFINITIONS[id as BuildingId];
-      if (b.level > 0) {
+      // Check active state
+      if (b.level > 0 && b.active !== false) {
         Object.entries(def.baseProduction).forEach(([r, amt]) => {
           rates[r as ResourceType] += (amt || 0) * b.level;
         });
@@ -100,7 +102,7 @@ function App() {
                 <p className="text-slate-400 text-sm max-w-lg">
                   Establish infrastructure. Convert energy to data. Synthesize reality.
                   <br/>
-                  <span className="text-xs text-slate-600">v1.0.5 - SEQUENTIAL UNLOCK</span>
+                  <span className="text-xs text-slate-600">v1.1.0 - PROTOCOL OVERRIDE ENABLED</span>
                 </p>
               </div>
               <div className="flex flex-col gap-2">
@@ -132,6 +134,7 @@ function App() {
                      id={id} 
                      data={buildings[id]} 
                      onUpgrade={upgradeBuilding}
+                     onToggle={toggleBuilding}
                      canAfford={canAfford}
                    />
                  );
